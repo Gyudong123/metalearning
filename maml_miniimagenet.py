@@ -24,6 +24,8 @@ from learn2learn.data.transforms import (NWays,
 
 print('hello!')
 print('h')
+
+print ('hello')
 def accuracy(predictions, targets):
     predictions = predictions.argmax(dim=1).view(targets.shape)
     return (predictions == targets).sum().float() / targets.size(0)
