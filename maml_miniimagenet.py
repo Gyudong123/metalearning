@@ -23,6 +23,7 @@ from learn2learn.data.transforms import (NWays,
                                          ConsecutiveLabels)
 
 print('hello!')
+print('h')
 def accuracy(predictions, targets):
     predictions = predictions.argmax(dim=1).view(targets.shape)
     return (predictions == targets).sum().float() / targets.size(0)
