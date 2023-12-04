@@ -52,7 +52,7 @@ def main(
         fast_lr=0.5,
         meta_batch_size=32,
         adaptation_steps=1,
-        num_iterations=10,
+        num_iterations=20,
         cuda=False,
         seed=42,
 ):
@@ -63,14 +63,14 @@ def main(
     if cuda:
         torch.cuda.manual_seed(seed)
         device = torch.device('cuda')
-
+    #Task: fc100, cifarfs, omniglot 3가지로.
     # Load train/validation/test tasksets using the benchmark interface
     tasksets = l2l.vision.benchmarks.get_tasksets('omniglot',
                                                   train_ways=ways,
                                                   train_samples=2*shots,
                                                   test_ways=ways,
                                                   test_samples=2*shots,
-                                                  num_tasks=20000,
+                                                  num_tasks=100,
                                                   root='~/data',
     )
 
