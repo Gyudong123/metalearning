@@ -70,7 +70,7 @@ def main(
                                                   train_samples=2*shots,
                                                   test_ways=ways,
                                                   test_samples=2*shots,
-                                                  num_tasks=100,
+                                                  num_tasks=20000,
                                                   root='~/data',
     )
 

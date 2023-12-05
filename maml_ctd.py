@@ -43,8 +43,8 @@ def maml_update(model, lr, meta_c, task_c, grads=None):
             print(msg)
         for p, g, mc, tc in zip(params, grads, meta_c, task_c):
             if g is not None:
-                # delta = (g+ 0.05*(mc-tc))
-                delta = g + 0.01 * mc
+                # delta = (g+ (mc-tc))
+                delta =  0.99 * g + 0.01 * mc
                 p.update = - lr * delta
                 tc.data = g
     return update_module(model)
