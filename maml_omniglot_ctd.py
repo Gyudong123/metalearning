@@ -15,7 +15,7 @@ from maml_ctd import MAML_ctd
 from ctd_utils import sum_params_across_models, average_params_across_models, fast_adapt_train
 
 from torch import nn, optim
-
+import copy
 
 def accuracy(predictions, targets):
     predictions = predictions.argmax(dim=1).view(targets.shape)
@@ -86,12 +86,9 @@ def main(
 
 
     #for Controlled task drift
-    task_cs = []
-    for i in range(len(tasksets.train)):
-        task_c = []
-        for param in model.parameters():
-            task_c.append(torch.zeros_like(param))
-        task_cs.append(task_c)
+    task_c = []
+    for param in model.parameters():
+        task_c.append(torch.zeros_like(param))    
 
     meta_c = []
     for param in model.parameters():
@@ -111,7 +108,7 @@ def main(
             #Need to edit here. #gd
             t_idx = random.randint(0, len(tasksets.train) - 1)
             batch = tasksets.train[t_idx]
-            evaluation_error, evaluation_accuracy = fast_adapt_train(meta_c, task_cs[t_idx],
+            evaluation_error, evaluation_accuracy = fast_adapt_train(meta_c, task_c,
                                                                batch,
                                                                learner,
                                                                loss,
@@ -135,7 +132,7 @@ def main(
                                                                device)
             meta_valid_error += evaluation_error.item()
             meta_valid_accuracy += evaluation_accuracy.item()
-            trained_task_cs.append(task_cs[t_idx])
+            trained_task_cs.append(copy.deepcopy(task_c))
 
         # Print some metrics
         print('\n')
