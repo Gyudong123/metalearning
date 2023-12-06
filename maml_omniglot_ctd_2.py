@@ -11,7 +11,7 @@ import random
 import numpy as np
 import torch
 import learn2learn as l2l
-from maml_ctd import MAML_ctd
+from maml_ctd_2 import MAML_ctd
 from ctd_utils import sum_params_across_models, average_params_across_models, fast_adapt_train
 
 from torch import nn, optim
@@ -52,7 +52,7 @@ def main(
         fast_lr=0.5,
         meta_batch_size=32,
         adaptation_steps=1,
-        num_iterations=20,
+        num_iterations=40,
         cuda=False,
         seed=42,
 ):
@@ -143,16 +143,18 @@ def main(
         print('Meta Valid Accuracy', meta_valid_accuracy / meta_batch_size)
 
         # Average the accumulated gradients and optimize
-        for p in maml.parameters():
+        for p in maml_t.parameters():
             p.grad.data.mul_(1.0 / meta_batch_size)
         opt.step()
-        meta_c = average_params_across_models(trained_task_cs)
+        for mc, tc in zip(meta_c, average_params_across_models(trained_task_cs)):
+            mc.data = mc * 0.9 + tc * 0.1
 
         
 
     meta_test_error = 0.0
     meta_test_accuracy = 0.0
-    for task in range(meta_batch_size):
+    t_task = 1000
+    for task in range(t_task):
         # Compute meta-testing loss
         learner = maml.clone()
         batch = tasksets.test.sample()
@@ -165,8 +167,8 @@ def main(
                                                            device)
         meta_test_error += evaluation_error.item()
         meta_test_accuracy += evaluation_accuracy.item()
-    print('Meta Test Error', meta_test_error / meta_batch_size)
-    print('Meta Test Accuracy', meta_test_accuracy / meta_batch_size)
+    print('Meta Test Error', meta_test_error / t_task)
+    print('Meta Test Accuracy', meta_test_accuracy / t_task)
 
 
 if __name__ == '__main__':
