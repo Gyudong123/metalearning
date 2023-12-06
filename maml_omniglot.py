@@ -52,7 +52,7 @@ def main(
         fast_lr=0.5,
         meta_batch_size=32,
         adaptation_steps=1,
-        num_iterations=20,
+        num_iterations=40,
         cuda=False,
         seed=42,
 ):
@@ -132,7 +132,8 @@ def main(
 
     meta_test_error = 0.0
     meta_test_accuracy = 0.0
-    for task in range(meta_batch_size):
+    t_task = 1000
+    for task in range(t_task):
         # Compute meta-testing loss
         learner = maml.clone()
         batch = tasksets.test.sample()
@@ -145,8 +146,8 @@ def main(
                                                            device)
         meta_test_error += evaluation_error.item()
         meta_test_accuracy += evaluation_accuracy.item()
-    print('Meta Test Error', meta_test_error / meta_batch_size)
-    print('Meta Test Accuracy', meta_test_accuracy / meta_batch_size)
+    print('Meta Test Error', meta_test_error / t_task)
+    print('Meta Test Accuracy', meta_test_accuracy / t_task)
 
 
 if __name__ == '__main__':
