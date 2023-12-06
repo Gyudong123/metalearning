@@ -144,11 +144,12 @@ def main(
         print('Meta Valid Accuracy', meta_valid_accuracy / meta_batch_size)
 
         # Average the accumulated gradients and optimize
-        for p in maml.parameters():
+        for p in maml_t.parameters():
             p.grad.data.mul_(1.0 / meta_batch_size)
+        meta_c = average_params_across_models(trained_task_cs)
+        for mc, p in zip(meta_c, maml_t.parameters()):
+            p.grad.data.add_(mc)
         opt.step()
-        for mc, tc in zip(meta_c, average_params_across_models(trained_task_cs)):
-            mc.data = mc * 0.9 + tc * 0.1
 
         
 

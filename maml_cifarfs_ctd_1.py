@@ -11,7 +11,7 @@ import random
 import numpy as np
 import torch
 import learn2learn as l2l
-from maml_ctd_2 import MAML_ctd
+from maml_ctd_1 import MAML_ctd
 from ctd_utils import sum_params_across_models, average_params_across_models, fast_adapt_train
 
 from torch import nn, optim
@@ -47,12 +47,12 @@ def fast_adapt(batch, learner, loss, adaptation_steps, shots, ways, device):
 
 def main(
         ways=5,
-        shots=1,
+        shots=5,
         meta_lr=0.003,
         fast_lr=0.5,
         meta_batch_size=32,
         adaptation_steps=1,
-        num_iterations=40,
+        num_iterations=50,
         cuda=False,
         seed=42,
 ):
@@ -65,7 +65,7 @@ def main(
         device = torch.device('cuda')
     #Task: fc100, cifarfs, omniglot 3가지로.
     # Load train/validation/test tasksets using the benchmark interface
-    tasksets = l2l.vision.benchmarks.get_tasksets('omniglot',
+    tasksets = l2l.vision.benchmarks.get_tasksets('cifarfs',
                                                   train_ways=ways,
                                                   train_samples=2*shots,
                                                   test_ways=ways,
@@ -75,7 +75,7 @@ def main(
     )
 
     # Create model
-    model = l2l.vision.models.OmniglotFC(28 ** 2, ways)
+    model = l2l.vision.models.CNN4(ways,hidden_size=64,embedding_size=256, max_pool=False)
     #11.28 How can I change the model?
     # model = l2l.vision.models.
     model.to(device)
@@ -145,9 +145,10 @@ def main(
         # Average the accumulated gradients and optimize
         for p in maml_t.parameters():
             p.grad.data.mul_(1.0 / meta_batch_size)
+        meta_c = average_params_across_models(trained_task_cs)
+        for mc, p in zip(meta_c, maml_t.parameters()):
+            p.grad.data.add_(mc)
         opt.step()
-        for mc, tc in zip(meta_c, average_params_across_models(trained_task_cs)):
-            mc.data = mc * 0.9 + tc * 0.1
 
         
 

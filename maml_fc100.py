@@ -47,12 +47,12 @@ def fast_adapt(batch, learner, loss, adaptation_steps, shots, ways, device):
 
 def main(
         ways=5,
-        shots=1,
+        shots=5,
         meta_lr=0.003,
         fast_lr=0.5,
         meta_batch_size=32,
         adaptation_steps=1,
-        num_iterations=100,
+        num_iterations=50,
         cuda=False,
         seed=42,
 ):

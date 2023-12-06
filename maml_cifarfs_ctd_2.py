@@ -11,7 +11,7 @@ import random
 import numpy as np
 import torch
 import learn2learn as l2l
-from metalearning.maml_ctd_2 import MAML_ctd
+from maml_ctd_2 import MAML_ctd
 from ctd_utils import sum_params_across_models, average_params_across_models, fast_adapt_train
 
 from torch import nn, optim
@@ -38,8 +38,7 @@ def fast_adapt(batch, learner, loss, adaptation_steps, shots, ways, device):
     for step in range(adaptation_steps):
         train_error = loss(learner(adaptation_data), adaptation_labels)
         learner.adapt(train_error)
-    
-    #여기에서 learner
+
     # Evaluate the adapted model
     predictions = learner(evaluation_data)
     valid_error = loss(predictions, evaluation_labels)
@@ -48,12 +47,12 @@ def fast_adapt(batch, learner, loss, adaptation_steps, shots, ways, device):
 
 def main(
         ways=5,
-        shots=1,
+        shots=5,
         meta_lr=0.003,
         fast_lr=0.5,
         meta_batch_size=32,
         adaptation_steps=1,
-        num_iterations=100,
+        num_iterations=50,
         cuda=False,
         seed=42,
 ):
@@ -147,7 +146,8 @@ def main(
         for p in maml_t.parameters():
             p.grad.data.mul_(1.0 / meta_batch_size)
         opt.step()
-        meta_c = average_params_across_models(trained_task_cs)
+        for mc, tc in zip(meta_c, average_params_across_models(trained_task_cs)):
+            mc.data = mc * 0.9 + tc * 0.1
 
         
 

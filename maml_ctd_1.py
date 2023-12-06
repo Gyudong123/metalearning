@@ -7,7 +7,7 @@ from learn2learn.algorithms.base_learner import BaseLearner
 from learn2learn.utils import clone_module, update_module
 
 
-def maml_update(model, lr, meta_c, task_c, grads=None):
+def maml_update(model, lr, task_c, grads=None):
     """
     [[Source]](https://github.com/learnables/learn2learn/blob/master/learn2learn/algorithms/maml.py)
 
@@ -41,9 +41,9 @@ def maml_update(model, lr, meta_c, task_c, grads=None):
             msg = 'WARNING:maml_update(): Parameters and gradients have different length. ('
             msg += str(len(params)) + ' vs ' + str(len(grads)) + ')'
             print(msg)
-        for p, g, mc, tc in zip(params, grads, meta_c, task_c):
+        for p, g, tc in zip(params, grads, task_c):
             if g is not None:
-                delta =  g + mc
+                delta =  g
                 p.update = - lr * delta
                 tc.data = g
     return update_module(model)
@@ -168,7 +168,7 @@ class MAML_ctd(BaseLearner):
                 print('learn2learn: Maybe try with allow_nograd=True and/or allow_unused=True ?')
 
         # Update the module
-        self.module = maml_update(self.module, self.lr, meta_c, task_c,  gradients)
+        self.module = maml_update(self.module, self.lr, task_c,  gradients)
 
     def clone(self, first_order=None, allow_unused=None, allow_nograd=None):
         """
