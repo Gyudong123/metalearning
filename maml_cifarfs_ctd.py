@@ -52,7 +52,7 @@ def main(
         fast_lr=0.5,
         meta_batch_size=32,
         adaptation_steps=1,
-        num_iterations=100,
+        num_iterations=20,
         cuda=False,
         seed=42,
 ):
@@ -65,7 +65,7 @@ def main(
         device = torch.device('cuda')
     #Task: fc100, cifarfs, omniglot 3가지로.
     # Load train/validation/test tasksets using the benchmark interface
-    tasksets = l2l.vision.benchmarks.get_tasksets('omniglot',
+    tasksets = l2l.vision.benchmarks.get_tasksets('cifarfs',
                                                   train_ways=ways,
                                                   train_samples=2*shots,
                                                   test_ways=ways,
@@ -75,7 +75,7 @@ def main(
     )
 
     # Create model
-    model = l2l.vision.models.OmniglotFC(28 ** 2, ways)
+    model = l2l.vision.models.OmniglotFC(32*32*3, ways)
     #11.28 How can I change the model?
     # model = l2l.vision.models.
     model.to(device)

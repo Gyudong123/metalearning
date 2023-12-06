@@ -3,19 +3,31 @@
 """
 Demonstrates how to:
     * use the MAML wrapper for fast-adaptation,
-    * use the benchmark interface to load Omniglot, and
+    * use the benchmark interface to load mini-ImageNet, and
     * sample tasks and split them in adaptation and evaluation sets.
+
+To contrast the use of the benchmark interface with directly instantiating mini-ImageNet datasets and tasks, compare with `protonet_miniimagenet.py`.
 """
 
 import random
 import numpy as np
+
 import torch
+from torch import nn, optim
+
 import learn2learn as l2l
+
 from maml_ctd import MAML_ctd
 from ctd_utils import sum_params_across_models, average_params_across_models, fast_adapt_train
 
 from torch import nn, optim
 import copy
+
+from learn2learn.data.transforms import (NWays,
+                                         KShots,
+                                         LoadData,
+                                         RemapLabels,
+                                         ConsecutiveLabels)
 
 def accuracy(predictions, targets):
     predictions = predictions.argmax(dim=1).view(targets.shape)
@@ -36,14 +48,15 @@ def fast_adapt(batch, learner, loss, adaptation_steps, shots, ways, device):
 
     # Adapt the model
     for step in range(adaptation_steps):
-        train_error = loss(learner(adaptation_data), adaptation_labels)
-        learner.adapt(train_error)
+        adaptation_error = loss(learner(adaptation_data), adaptation_labels)
+        learner.adapt(adaptation_error)
 
     # Evaluate the adapted model
     predictions = learner(evaluation_data)
-    valid_error = loss(predictions, evaluation_labels)
-    valid_accuracy = accuracy(predictions, evaluation_labels)
-    return valid_error, valid_accuracy
+    evaluation_error = loss(predictions, evaluation_labels)
+    evaluation_accuracy = accuracy(predictions, evaluation_labels)
+    return evaluation_error, evaluation_accuracy
+
 
 def main(
         ways=5,
@@ -52,7 +65,7 @@ def main(
         fast_lr=0.5,
         meta_batch_size=32,
         adaptation_steps=1,
-        num_iterations=100,
+        num_iterations=20,
         cuda=False,
         seed=42,
 ):
@@ -60,39 +73,34 @@ def main(
     np.random.seed(seed)
     torch.manual_seed(seed)
     device = torch.device('cpu')
-    if cuda:
+    if cuda and torch.cuda.device_count():
         torch.cuda.manual_seed(seed)
         device = torch.device('cuda')
-    #Task: fc100, cifarfs, omniglot 3가지로.
-    # Load train/validation/test tasksets using the benchmark interface
-    tasksets = l2l.vision.benchmarks.get_tasksets('omniglot',
-                                                  train_ways=ways,
+    # Create Tasksets using the benchmark interface
+    tasksets = l2l.vision.benchmarks.get_tasksets('mini-imagenet',
                                                   train_samples=2*shots,
-                                                  test_ways=ways,
+                                                  train_ways=ways,
                                                   test_samples=2*shots,
-                                                  num_tasks=20000,
+                                                  test_ways=ways,
                                                   root='~/data',
     )
 
     # Create model
-    model = l2l.vision.models.OmniglotFC(28 ** 2, ways)
-    #11.28 How can I change the model?
-    # model = l2l.vision.models.
+    model = l2l.vision.models.MiniImagenetCNN(ways)
     model.to(device)
-    maml_t = MAML_ctd(model, lr=fast_lr, first_order=False)
+    maml_t = MAML_ctd(model, lr=fast_lr, first_order=False) #added
     maml = l2l.algorithms.MAML(model, lr=fast_lr, first_order=False)
     opt = optim.Adam(maml.parameters(), meta_lr)
     loss = nn.CrossEntropyLoss(reduction='mean')
 
-
-    #for Controlled task drift
     task_c = []
     for param in model.parameters():
         task_c.append(torch.zeros_like(param))
-
+        
     meta_c = []
     for param in model.parameters():
         meta_c.append(torch.zeros_like(param))
+
 
     for iteration in range(num_iterations):
         opt.zero_grad()
@@ -104,12 +112,12 @@ def main(
         for task in range(meta_batch_size):
             # Compute meta-training loss
             learner = maml_t.clone()
-
-            #Need to edit here. #gd
+            #batch = tasksets.train_t.sample()
+            
             t_idx = random.randint(0, len(tasksets.train) - 1)
             batch = tasksets.train[t_idx]
-            evaluation_error, evaluation_accuracy = fast_adapt_train(meta_c, task_c,
-                                                               batch,
+            evaluation_error, evaluation_accuracy = fast_adapt_train(meta_c, task_c, 
+                                                                batch,
                                                                learner,
                                                                loss,
                                                                adaptation_steps,
@@ -133,7 +141,6 @@ def main(
             meta_valid_error += evaluation_error.item()
             meta_valid_accuracy += evaluation_accuracy.item()
             trained_task_cs.append(copy.deepcopy(task_c))
-
         # Print some metrics
         print('\n')
         print('Iteration', iteration)
@@ -147,7 +154,6 @@ def main(
             p.grad.data.mul_(1.0 / meta_batch_size)
         opt.step()
         meta_c = average_params_across_models(trained_task_cs)
-
 
 
     meta_test_error = 0.0

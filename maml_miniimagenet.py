@@ -58,7 +58,7 @@ def main(
         fast_lr=0.5,
         meta_batch_size=32,
         adaptation_steps=1,
-        num_iterations=10,
+        num_iterations=20,
         cuda=False,
         seed=42,
 ):
