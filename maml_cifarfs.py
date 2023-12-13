@@ -76,6 +76,7 @@ def main(
 
     # Create model
     model = l2l.vision.models.CNN4(ways,hidden_size=64,embedding_size=256, max_pool=False)
+    print(model)
     #11.28 How can I change the model?
     # model = l2l.vision.models.
     model.to(device)

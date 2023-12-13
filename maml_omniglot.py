@@ -76,6 +76,7 @@ def main(
 
     # Create model
     model = l2l.vision.models.OmniglotFC(28 ** 2, ways)
+    print(model)
     #11.28 How can I change the model?
     # model = l2l.vision.models.
     model.to(device)
